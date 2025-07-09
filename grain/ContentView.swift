@@ -10,23 +10,26 @@ import CoreData
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @State private var isPresented = false
 
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
+        sortDescriptors: [NSSortDescriptor(keyPath: \ItemEntity.dueAt, ascending: true)],
         animation: .default)
-    private var items: FetchedResults<Item>
+    private var items: FetchedResults<ItemEntity>
 
     var body: some View {
         NavigationView {
             List {
                 ForEach(items) { item in
                     NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
+                        Text("Item at \(item.dueAt!, formatter: itemFormatter)")
                     } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+                        Text(item.title!)
                     }
                 }
                 .onDelete(perform: deleteItems)
+
+                
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -34,7 +37,7 @@ struct ContentView: View {
                 }
                 ToolbarItem {
                     Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                        Label("Add Item", systemImage: "plus").fullScreenCover(isPresented: $isPresented, content: CreateNewTaskView.init)
                     }
                 }
             }
@@ -43,10 +46,12 @@ struct ContentView: View {
     }
 
     private func addItem() {
+        isPresented.toggle()
         withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
+            let newItem = ItemEntity(context: viewContext)
+            newItem.dueAt = Date()
+            newItem.title = "test"
+            
             do {
                 try viewContext.save()
             } catch {
